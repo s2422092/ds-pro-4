@@ -45,8 +45,15 @@ class CalculatorApp(ft.Container):
         self.content = ft.Column(
             controls=[
                 ft.Row(controls=[self.result], alignment="end"),
+
+                ## 1行目
+                ##　新たにボタンを追加すえれば新しい列ができる
+
                 ft.Row(
                     controls=[
+                        DigitButton(
+                            text="X^2", button_clicked=self.button_clicked
+                        ),
                         ExtraActionButton(
                             text="AC", button_clicked=self.button_clicked
                         ),
@@ -57,32 +64,49 @@ class CalculatorApp(ft.Container):
                         ActionButton(text="/", button_clicked=self.button_clicked),
                     ]
                 ),
+
+                ## 2行目
+
                 ft.Row(
                     controls=[
+                        DigitButton(text="x^3", button_clicked=self.button_clicked),
                         DigitButton(text="7", button_clicked=self.button_clicked),
                         DigitButton(text="8", button_clicked=self.button_clicked),
                         DigitButton(text="9", button_clicked=self.button_clicked),
                         ActionButton(text="*", button_clicked=self.button_clicked),
                     ]
                 ),
+
+                ## 3行目
+
                 ft.Row(
                     controls=[
+                        DigitButton(text="sin", button_clicked=self.button_clicked),
                         DigitButton(text="4", button_clicked=self.button_clicked),
                         DigitButton(text="5", button_clicked=self.button_clicked),
                         DigitButton(text="6", button_clicked=self.button_clicked),
                         ActionButton(text="-", button_clicked=self.button_clicked),
                     ]
                 ),
+
+                ## 4行目
+
                 ft.Row(
                     controls=[
+                        DigitButton(text="cos", button_clicked=self.button_clicked),
+                        DigitButton(text="x^3", button_clicked=self.button_clicked),
                         DigitButton(text="1", button_clicked=self.button_clicked),
                         DigitButton(text="2", button_clicked=self.button_clicked),
                         DigitButton(text="3", button_clicked=self.button_clicked),
                         ActionButton(text="+", button_clicked=self.button_clicked),
                     ]
                 ),
+
+                ## 5行目
+
                 ft.Row(
                     controls=[
+                        DigitButton(text="tan", button_clicked=self.button_clicked),
                         DigitButton(
                             text="0", expand=2, button_clicked=self.button_clicked
                         ),
@@ -93,6 +117,7 @@ class CalculatorApp(ft.Container):
             ]
         )
 
+    ##下記でそれぞれのtextごとにおされた時の処理を記述
     def button_clicked(self, e):
         data = e.control.data
         print(f"Button clicked with data = {data}")
