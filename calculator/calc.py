@@ -1,4 +1,5 @@
 import flet as ft
+import math
 
 
 class CalcButton(ft.ElevatedButton):
@@ -196,13 +197,16 @@ class CalculatorApp(ft.Container):
             return self.format_number(operand1 ** 3)
         
         elif operator == "sin":
-            return self.format_number(operand1 * operand2)
+            radians = math.radians(operand1)  
+            return self.format_number(math.sin(radians))
         
         elif operator == "cos":
-            return self.format_number(operand1 * operand2)
+            radians = math.radians(operand1)
+            return self.format_number(math.cos(radians))
         
         elif operator == "tan":
-            return self.format_number(operand1 * operand2)
+            radians = math.radians(operand1)
+            return self.format_number(math.tan(radians))
 
         elif operator == "/":
             if operand2 == 0:
