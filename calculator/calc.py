@@ -13,15 +13,23 @@ class CalcButton(ft.ElevatedButton):
 class DigitButton(CalcButton):
     def __init__(self, text, button_clicked, expand=1):
         CalcButton.__init__(self, text, button_clicked, expand)
-        self.bgcolor = ft.colors.WHITE24
+        self.bgcolor = ft.colors.WHITE38
         self.color = ft.colors.WHITE
 
+
+class DigitButton_else(CalcButton):
+    def __init__(self, text, button_clicked, expand=1):
+        CalcButton.__init__(self, text, button_clicked, expand)
+        self.bgcolor = ft.colors.WHITE24
+        self.color = ft.colors.WHITE
 
 class ActionButton(CalcButton):
     def __init__(self, text, button_clicked):
         CalcButton.__init__(self, text, button_clicked)
         self.bgcolor = ft.colors.ORANGE
         self.color = ft.colors.WHITE
+
+
 
 
 class ExtraActionButton(CalcButton):
@@ -51,7 +59,7 @@ class CalculatorApp(ft.Container):
 
                 ft.Row(
                     controls=[
-                        DigitButton(
+                        DigitButton_else(
                             text="X^2", button_clicked=self.button_clicked
                         ),
                         ExtraActionButton(
@@ -69,7 +77,7 @@ class CalculatorApp(ft.Container):
 
                 ft.Row(
                     controls=[
-                        DigitButton(text="x^3", button_clicked=self.button_clicked),
+                        DigitButton_else(text="X^3", button_clicked=self.button_clicked),
                         DigitButton(text="7", button_clicked=self.button_clicked),
                         DigitButton(text="8", button_clicked=self.button_clicked),
                         DigitButton(text="9", button_clicked=self.button_clicked),
@@ -81,7 +89,7 @@ class CalculatorApp(ft.Container):
 
                 ft.Row(
                     controls=[
-                        DigitButton(text="sin", button_clicked=self.button_clicked),
+                        DigitButton_else(text="sin", button_clicked=self.button_clicked),
                         DigitButton(text="4", button_clicked=self.button_clicked),
                         DigitButton(text="5", button_clicked=self.button_clicked),
                         DigitButton(text="6", button_clicked=self.button_clicked),
@@ -93,8 +101,7 @@ class CalculatorApp(ft.Container):
 
                 ft.Row(
                     controls=[
-                        DigitButton(text="cos", button_clicked=self.button_clicked),
-                        DigitButton(text="x^3", button_clicked=self.button_clicked),
+                        DigitButton_else(text="cos", button_clicked=self.button_clicked),
                         DigitButton(text="1", button_clicked=self.button_clicked),
                         DigitButton(text="2", button_clicked=self.button_clicked),
                         DigitButton(text="3", button_clicked=self.button_clicked),
@@ -106,7 +113,7 @@ class CalculatorApp(ft.Container):
 
                 ft.Row(
                     controls=[
-                        DigitButton(text="tan", button_clicked=self.button_clicked),
+                        DigitButton_else(text="tan", button_clicked=self.button_clicked),
                         DigitButton(
                             text="0", expand=2, button_clicked=self.button_clicked
                         ),
@@ -132,7 +139,7 @@ class CalculatorApp(ft.Container):
             else:
                 self.result.value = self.result.value + data
 
-        elif data in ("+", "-", "*", "/"):
+        elif data in ("+", "-", "*", "/","X^2","X^3","sin","cos","tan"):    
             self.result.value = self.calculate(
                 self.operand1, float(self.result.value), self.operator
             )
@@ -142,6 +149,7 @@ class CalculatorApp(ft.Container):
             else:
                 self.operand1 = float(self.result.value)
             self.new_operand = True
+
 
         elif data in ("="):
             self.result.value = self.calculate(
@@ -179,6 +187,21 @@ class CalculatorApp(ft.Container):
             return self.format_number(operand1 - operand2)
 
         elif operator == "*":
+            return self.format_number(operand1 * operand2)
+        
+        elif operator == "X^2":
+            return self.format_number(operand1 ** 2)
+        
+        elif operator == "X^3":
+            return self.format_number(operand1 ** 3)
+        
+        elif operator == "sin":
+            return self.format_number(operand1 * operand2)
+        
+        elif operator == "cos":
+            return self.format_number(operand1 * operand2)
+        
+        elif operator == "tan":
             return self.format_number(operand1 * operand2)
 
         elif operator == "/":
