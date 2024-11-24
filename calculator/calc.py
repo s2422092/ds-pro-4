@@ -223,6 +223,10 @@ class CalculatorApp(ft.Container):
         elif operator == "X^3":
             return self.format_number(operand1 ** 3)
         
+        elif operator == "1/X":
+            return self.format_number(1 / operand1)
+        
+        
         elif operator == "sin":
             radians = math.radians(operand1)  
             return self.format_number(math.sin(radians))
