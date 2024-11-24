@@ -164,7 +164,7 @@ class CalculatorApp(ft.Container):
             else:
                 self.result.value = self.result.value + data
 
-        elif data in ("+", "-", "*", "/","X^2","X^3","sin","cos","tan"):    
+        elif data in ("+", "-", "*", "/","mc","m+","m-","mr","X^2","X^3","X^y","sin","cos","tan"):    
             self.result.value = self.calculate(
                 self.operand1, float(self.result.value), self.operator
             )
@@ -213,6 +213,9 @@ class CalculatorApp(ft.Container):
 
         elif operator == "*":
             return self.format_number(operand1 * operand2)
+        
+        elif operator == "X^y":
+            return self.format_number(operand1 ** operand2)
         
         elif operator == "X^2":
             return self.format_number(operand1 ** 2)
