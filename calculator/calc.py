@@ -226,6 +226,10 @@ class CalculatorApp(ft.Container):
         elif operator == "1/X":
             return self.format_number(1 / operand1)
         
+        elif operator == "X!":
+            if operand1 < 0 or not operand1.is_integer():  
+                return "Error"
+            return self.format_number(math.factorial(int(operand1)))
         
         elif operator == "sin":
             radians = math.radians(operand1)  
