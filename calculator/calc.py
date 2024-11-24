@@ -234,6 +234,9 @@ class CalculatorApp(ft.Container):
         elif operator == "π":
             return self.format_number(math.pi)
         
+        elif operator == "e":
+            return self.format_number(math.e)
+        
         elif operator == "10^x":
             return self.format_number(10**operand1)
         
