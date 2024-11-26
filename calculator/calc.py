@@ -164,7 +164,7 @@ class CalculatorApp(ft.Container):
             else:
                 self.result.value = self.result.value + data
 
-        elif data in ("+", "-", "*", "/","(",")","mc","m+","m-","mr","2^nd","X^2”,”X^3","X^y","e^x","10^x", "1/X","2√x","3√x”,”y√x","In","log10","X!","sin","cos","tan","e","EE","Rad","sinh","cosh", "tanh","π","Rand",):    
+        elif data in ("+", "-", "*", "/","(",")","mc","m+","m-","mr","2^nd", "X^2", "X^3" ,"X^y","e^x","10^x", "1/X","2√x","3√x”,”y√x","In","log10","X!","sin","cos","tan","e","EE","Rad","sinh","cosh", "tanh","π","Rand",):    
             self.result.value = self.calculate(
                 self.operand1, float(self.result.value), self.operator
             )
