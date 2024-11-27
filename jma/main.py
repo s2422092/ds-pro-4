@@ -16,6 +16,10 @@ def get_weather_data(region_code: str):
     
     return response.json()
 
+
+
+
+
 def main(page: ft.Page):
     # メニューバーを追加
     page.add(
