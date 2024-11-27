@@ -24,12 +24,16 @@ def main(page: ft.Page):
             actions=[
                 ft.IconButton(ft.icons.SETTINGS, on_click=lambda e: print("Settings clicked"))
             ],
-            bgcolor=ft.colors.BLUE_700
+            bgcolor=ft.colors.BLUE,  # AppBarの背景色を青に変更
         )
     )
 
     # 右側の空白部分に天気予報情報を表示するためのコンテナ
-    weather_details = ft.Text("詳細な天気情報がここに表示されます。")
+    weather_details = ft.ListView(  # ListViewを使用してスクロール可能にする
+        spacing=10,  # 各項目の間隔
+        width=600,  # 幅を指定
+        height=500,  # 高さを指定してスクロールを有効にする
+    )
 
     # 地域名リストを作成
     controls = []
@@ -75,27 +79,31 @@ def main(page: ft.Page):
 
             # 県ごとのExpansionTileに子地域を追加
             prefecture_controls.append(
-                ft.ExpansionTile(
-                    title=ft.Text(child_region_name),  # 県名をタイトルとして表示
-                    subtitle=ft.Text("地域を表示"),
-                    affinity=ft.TileAffinity.PLATFORM,
-                    maintain_state=True,
-                    collapsed_text_color=ft.colors.RED,
-                    text_color=ft.colors.RED,
-                    controls=subregion_controls,  # 子地域（細分化された地域）のリストを追加
+                ft.Container(
+                    bgcolor=ft.colors.GREY,  # 背景色を灰色に設定
+                    content=ft.ExpansionTile(
+                        title=ft.Text(child_region_name),  # 県名をタイトルとして表示
+                        subtitle=ft.Text("地域を表示"),
+                        affinity=ft.TileAffinity.PLATFORM,
+                        maintain_state=True,
+                        collapsed_text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
+                        text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
+                        controls=subregion_controls,  # 子地域（細分化された地域）のリストを追加
+                    )
                 )
             )
 
         # 親地域をさらにExpansionTileとして表示し、その中に県ごとのExpansionTileを追加
         controls.append(
             ft.Container(
+                bgcolor=ft.colors.GREY,  # 背景色を灰色に設定
                 content=ft.ExpansionTile(
                     title=ft.Text(parent_region_name),  # 親地域名をタイトルとして表示
                     subtitle=ft.Text("県と地域を表示"),
                     affinity=ft.TileAffinity.PLATFORM,
                     maintain_state=True,
-                    collapsed_text_color=ft.colors.RED,
-                    text_color=ft.colors.RED,
+                    collapsed_text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
+                    text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
                     controls=prefecture_controls,  # 県ごとのリストを追加
                 ),
                 width=200,  # 幅を200pxに設定（短く）
@@ -113,8 +121,7 @@ def main(page: ft.Page):
                     scroll=True  # 左側にスクロールを有効化
                 ),
                 ft.Container(
-                    width=600,  # 右側に空白スペースを作る
-                    bgcolor=ft.colors.WHITE,  # 白い背景を設定
+                    width=600,  # 右側の天気予報詳細部分の幅を指定
                     content=weather_details  # 右側に天気予報の詳細を表示
                 )
             ],
@@ -137,7 +144,7 @@ def show_weather_details(region_id, region_name, weather_details):
         areas = time_series[0].get("areas", [])
         
         detailed_info = []
-        for i, area in enumerate(areas):
+        for area in areas:
             area_name = area["area"]["name"]
             
             # 各リスト（weatherCodes, weathers, winds, waves）からデータを取得
@@ -145,26 +152,31 @@ def show_weather_details(region_id, region_name, weather_details):
             weathers = area.get("weathers", ["情報なし"])
             winds = area.get("winds", ["情報なし"])
             waves = area.get("waves", ["情報なし"])
-            
-            # インデックス i がリストの長さを超えていないかをチェック
-            weather_code = weather_codes[i] if i < len(weather_codes) else "情報なし"
-            weather = weathers[i] if i < len(weathers) else "情報なし"
-            wind = winds[i] if i < len(winds) else "情報なし"
-            wave = waves[i] if i < len(waves) else "情報なし"
 
-            # 日時ごとの天気情報を追加
-            detailed_info.append(f"日時: {time_defines[i]}" if i < len(time_defines) else "日時: 情報なし")
-            detailed_info.append(f"地域: {area_name}")
-            detailed_info.append(f"天気: {weather}")
-            detailed_info.append(f"風: {wind}")
-            detailed_info.append(f"波: {wave}")
-            detailed_info.append("-" * 30)
+            # 3日分のデータを整理
+            for i in range(len(time_defines)):
+                # 各リストからデータを取得
+                weather = weathers[i] if i < len(weathers) else "情報なし"
+                wind = winds[i] if i < len(winds) else "情報なし"
+                wave = waves[i] if i < len(waves) else "情報なし"
+                time_define = time_defines[i] if i < len(time_defines) else "情報なし"
+                
+                detailed_info.append(f"日時: {time_define}")
+                detailed_info.append(f"地域: {area_name}")
+                detailed_info.append(f"天気: {weather}")
+                detailed_info.append(f"風: {wind}")
+                detailed_info.append(f"波: {wave}")
+                detailed_info.append("-" * 30)
 
-        # 詳細な天気情報を右側のテキストに表示
-        weather_details.value = "\n".join(detailed_info)
+        # 詳細な天気情報を右側のリストビューに表示
+        weather_details.controls = [ft.Container(
+            content=ft.Column([ft.Text(info) for info in detailed_info]),
+            bgcolor=ft.colors.LIGHT_BLUE_50,  # 背景色を設定
+            padding=10  # パディングを追加
+        )]
     else:
-        weather_details.value = "天気情報が取得できませんでした。"
-    
+        weather_details.controls = [ft.Text("天気情報が取得できませんでした。")]
+
     weather_details.update()
 
 # Fletアプリケーションを実行
