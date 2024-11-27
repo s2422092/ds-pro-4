@@ -29,7 +29,11 @@ def main(page: ft.Page):
     )
 
     # 右側の空白部分に天気予報情報を表示するためのコンテナ
-    weather_details = ft.Text("詳細な天気情報がここに表示されます。")
+    weather_details = ft.ListView(  # ListViewを使用してスクロール可能にする
+        spacing=10,  # 各項目の間隔
+        width=600,  # 幅を指定
+        height=500,  # 高さを指定してスクロールを有効にする
+    )
 
     # 地域名リストを作成
     controls = []
@@ -112,11 +116,7 @@ def main(page: ft.Page):
                     expand=True,  # 左側を拡張してスペースを取る
                     scroll=True  # 左側にスクロールを有効化
                 ),
-                ft.Container(
-                    width=600,  # 右側に空白スペースを作る
-                    bgcolor=ft.colors.WHITE,  # 白い背景を設定
-                    content=weather_details  # 右側に天気予報の詳細を表示
-                )
+                weather_details  # 右側に天気予報の詳細を表示
             ],
             expand=True  # 全体的に広げる
         )
@@ -137,7 +137,7 @@ def show_weather_details(region_id, region_name, weather_details):
         areas = time_series[0].get("areas", [])
         
         detailed_info = []
-        for i, area in enumerate(areas):
+        for area in areas:
             area_name = area["area"]["name"]
             
             # 各リスト（weatherCodes, weathers, winds, waves）からデータを取得
@@ -145,26 +145,27 @@ def show_weather_details(region_id, region_name, weather_details):
             weathers = area.get("weathers", ["情報なし"])
             winds = area.get("winds", ["情報なし"])
             waves = area.get("waves", ["情報なし"])
-            
-            # インデックス i がリストの長さを超えていないかをチェック
-            weather_code = weather_codes[i] if i < len(weather_codes) else "情報なし"
-            weather = weathers[i] if i < len(weathers) else "情報なし"
-            wind = winds[i] if i < len(winds) else "情報なし"
-            wave = waves[i] if i < len(waves) else "情報なし"
 
-            # 日時ごとの天気情報を追加
-            detailed_info.append(f"日時: {time_defines[i]}" if i < len(time_defines) else "日時: 情報なし")
-            detailed_info.append(f"地域: {area_name}")
-            detailed_info.append(f"天気: {weather}")
-            detailed_info.append(f"風: {wind}")
-            detailed_info.append(f"波: {wave}")
-            detailed_info.append("-" * 30)
+            # 3日分のデータを整理
+            for i in range(len(time_defines)):
+                # 各リストからデータを取得
+                weather = weathers[i] if i < len(weathers) else "情報なし"
+                wind = winds[i] if i < len(winds) else "情報なし"
+                wave = waves[i] if i < len(waves) else "情報なし"
+                time_define = time_defines[i] if i < len(time_defines) else "情報なし"
+                
+                detailed_info.append(f"日時: {time_define}")
+                detailed_info.append(f"地域: {area_name}")
+                detailed_info.append(f"天気: {weather}")
+                detailed_info.append(f"風: {wind}")
+                detailed_info.append(f"波: {wave}")
+                detailed_info.append("-" * 30)
 
-        # 詳細な天気情報を右側のテキストに表示
-        weather_details.value = "\n".join(detailed_info)
+        # 詳細な天気情報を右側のリストビューに表示
+        weather_details.controls = [ft.Text(info) for info in detailed_info]
     else:
-        weather_details.value = "天気情報が取得できませんでした。"
-    
+        weather_details.controls = [ft.Text("天気情報が取得できませんでした。")]
+
     weather_details.update()
 
 # Fletアプリケーションを実行
