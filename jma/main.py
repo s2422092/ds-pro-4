@@ -1,31 +1,39 @@
 import flet as ft
+import requests
 
-
+# APIから地域データを取得
+data_json = requests.get("http://www.jma.go.jp/bosai/common/const/area.json").json()
 
 def main(page: ft.Page):
-    # 上半分を青色にするためのContainer
-    top_half = ft.Container(
-        content=ft.Text("天気予報", size=40, color=ft.colors.WHITE),  
-        bgcolor=ft.colors.BLUE_500,  # 背景色を青に設定
-        height=page.height // 10,  # ページの高さの半分
-        alignment=ft.alignment.top_left,  # テキストを中央に配置
-    )
-
-    # SafeAreaの中に青色の上半分を配置
-    page.add(ft.SafeArea(top_half))
+    # 地域名リストを作成
+    regions = []
     
-    page.add(
-        ft.ExpansionTile(
-            title=ft.Text("ExpansionTile 1"),
-            subtitle=ft.Text("Trailing expansion arrow icon"),
-            affinity=ft.TileAffinity.PLATFORM,
-            maintain_state=True,
-            collapsed_text_color=ft.colors.RED,
-            text_color=ft.colors.RED,
-            controls=[ft.ListTile(title=ft.Text("This is sub-tile number 1"))],
-        ),
-    )
+    # centers の中から地域名を抽出
+    for region_id, region_info in data_json["centers"].items():
+        regions.append(region_info["name"])  # 地域名をリストに追加
 
-    
+    # Containerで複数のExpansionTileを作成
+    controls = []
+    for region in regions:
+        controls.append(
+            ft.Container(
+                content=ft.ExpansionTile(
+                    title=ft.Text(region),  # 地域名をタイトルとして表示
+                    subtitle=ft.Text("Trailing expansion arrow icon"),
+                    affinity=ft.TileAffinity.PLATFORM,
+                    maintain_state=True,
+                    collapsed_text_color=ft.colors.RED,
+                    text_color=ft.colors.RED,
+                    controls=[ft.ListTile(title=ft.Text(f"This is sub-tile for {region}"))],
+                ),
+                width=300,  # 幅を設定
+                alignment=ft.alignment.center,  # 中央に配置
+            )
+        )
 
+    # すべてのExpansionTileをページに追加
+    page.add(ft.Column(controls=controls))
+
+# Fletアプリケーションを実行
 ft.app(main)
+
