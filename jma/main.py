@@ -1,4 +1,3 @@
-
 import flet as ft
 import requests
 
@@ -70,7 +69,7 @@ def main(page: ft.Page):
                 ft.ListTile(
                     title=ft.Text(child_region_name),
                     subtitle=ft.Text(f"天気予報: {weather_info}"),
-                    on_click=lambda e, region_id=child_id, region_name=child_region_name: open_weather_link(region_id)
+                    on_click=lambda e, region_id=child_id, region_name=child_region_name: show_weather_details(region_id, region_name, weather_details)
                 )
             )
 
@@ -123,10 +122,42 @@ def main(page: ft.Page):
         )
     )
 
-def open_weather_link(region_id):
-    """指定された地域の天気予報URLを開く"""
-    url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{region_id}.json"
-    ft.launch(url)  # ブラウザでURLを開く
+def show_weather_details(region_id, region_name, weather_details):
+    """クリックされた子地域の天気予報を右側に表示"""
+    # 天気予報データを取得
+    weather_data = get_weather_data(region_id)
+
+    # 天気情報を確認
+    if weather_data:
+        # ここに表示する情報を整理
+        time_series = weather_data[0].get('timeSeries', [])
+        
+        # 1番目のtimeSeriesを取り出し、詳細を整理
+        time_defines = time_series[0].get("timeDefines", [])
+        areas = time_series[0].get("areas", [])
+        
+        detailed_info = []
+        for i, area in enumerate(areas):
+            area_name = area["area"]["name"]
+            weather_code = area.get("weatherCodes", ["情報なし"])[i]  # 天気コード
+            weather = area.get("weathers", ["情報なし"])[i]  # 天気
+            wind = area.get("winds", ["情報なし"])[i]  # 風
+            waves = area.get("waves", ["情報なし"])[i]  # 波
+            
+            # 日付ごとの天気情報を追加
+            detailed_info.append(f"日時: {time_defines[i]}")
+            detailed_info.append(f"地域: {area_name}")
+            detailed_info.append(f"天気: {weather}")
+            detailed_info.append(f"風: {wind}")
+            detailed_info.append(f"波: {waves}")
+            detailed_info.append("-" * 30)
+
+        # 詳細な天気情報を右側のテキストに表示
+        weather_details.value = "\n".join(detailed_info)
+    else:
+        weather_details.value = "天気情報が取得できませんでした。"
+    
+    weather_details.update()
 
 # Fletアプリケーションを実行
 ft.app(main)
