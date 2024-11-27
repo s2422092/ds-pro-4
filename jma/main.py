@@ -139,17 +139,25 @@ def show_weather_details(region_id, region_name, weather_details):
         detailed_info = []
         for i, area in enumerate(areas):
             area_name = area["area"]["name"]
-            weather_code = area.get("weatherCodes", ["情報なし"])[i]  # 天気コード
-            weather = area.get("weathers", ["情報なし"])[i]  # 天気
-            wind = area.get("winds", ["情報なし"])[i]  # 風
-            waves = area.get("waves", ["情報なし"])[i]  # 波
             
-            # 日付ごとの天気情報を追加
-            detailed_info.append(f"日時: {time_defines[i]}")
+            # 各リスト（weatherCodes, weathers, winds, waves）からデータを取得
+            weather_codes = area.get("weatherCodes", ["情報なし"])
+            weathers = area.get("weathers", ["情報なし"])
+            winds = area.get("winds", ["情報なし"])
+            waves = area.get("waves", ["情報なし"])
+            
+            # インデックス i がリストの長さを超えていないかをチェック
+            weather_code = weather_codes[i] if i < len(weather_codes) else "情報なし"
+            weather = weathers[i] if i < len(weathers) else "情報なし"
+            wind = winds[i] if i < len(winds) else "情報なし"
+            wave = waves[i] if i < len(waves) else "情報なし"
+
+            # 日時ごとの天気情報を追加
+            detailed_info.append(f"日時: {time_defines[i]}" if i < len(time_defines) else "日時: 情報なし")
             detailed_info.append(f"地域: {area_name}")
             detailed_info.append(f"天気: {weather}")
             detailed_info.append(f"風: {wind}")
-            detailed_info.append(f"波: {waves}")
+            detailed_info.append(f"波: {wave}")
             detailed_info.append("-" * 30)
 
         # 詳細な天気情報を右側のテキストに表示
