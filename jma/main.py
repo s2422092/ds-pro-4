@@ -24,7 +24,7 @@ def main(page: ft.Page):
             actions=[
                 ft.IconButton(ft.icons.SETTINGS, on_click=lambda e: print("Settings clicked"))
             ],
-            bgcolor=ft.colors.BLUE_700
+            bgcolor=ft.colors.BLUE,  # AppBarの背景色を青に変更
         )
     )
 
@@ -79,27 +79,31 @@ def main(page: ft.Page):
 
             # 県ごとのExpansionTileに子地域を追加
             prefecture_controls.append(
-                ft.ExpansionTile(
-                    title=ft.Text(child_region_name),  # 県名をタイトルとして表示
-                    subtitle=ft.Text("地域を表示"),
-                    affinity=ft.TileAffinity.PLATFORM,
-                    maintain_state=True,
-                    collapsed_text_color=ft.colors.RED,
-                    text_color=ft.colors.RED,
-                    controls=subregion_controls,  # 子地域（細分化された地域）のリストを追加
+                ft.Container(
+                    bgcolor=ft.colors.GREY,  # 背景色を灰色に設定
+                    content=ft.ExpansionTile(
+                        title=ft.Text(child_region_name),  # 県名をタイトルとして表示
+                        subtitle=ft.Text("地域を表示"),
+                        affinity=ft.TileAffinity.PLATFORM,
+                        maintain_state=True,
+                        collapsed_text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
+                        text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
+                        controls=subregion_controls,  # 子地域（細分化された地域）のリストを追加
+                    )
                 )
             )
 
         # 親地域をさらにExpansionTileとして表示し、その中に県ごとのExpansionTileを追加
         controls.append(
             ft.Container(
+                bgcolor=ft.colors.GREY,  # 背景色を灰色に設定
                 content=ft.ExpansionTile(
                     title=ft.Text(parent_region_name),  # 親地域名をタイトルとして表示
                     subtitle=ft.Text("県と地域を表示"),
                     affinity=ft.TileAffinity.PLATFORM,
                     maintain_state=True,
-                    collapsed_text_color=ft.colors.RED,
-                    text_color=ft.colors.RED,
+                    collapsed_text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
+                    text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
                     controls=prefecture_controls,  # 県ごとのリストを追加
                 ),
                 width=200,  # 幅を200pxに設定（短く）
@@ -116,7 +120,10 @@ def main(page: ft.Page):
                     expand=True,  # 左側を拡張してスペースを取る
                     scroll=True  # 左側にスクロールを有効化
                 ),
-                weather_details  # 右側に天気予報の詳細を表示
+                ft.Container(
+                    width=600,  # 右側の天気予報詳細部分の幅を指定
+                    content=weather_details  # 右側に天気予報の詳細を表示
+                )
             ],
             expand=True  # 全体的に広げる
         )
@@ -162,7 +169,11 @@ def show_weather_details(region_id, region_name, weather_details):
                 detailed_info.append("-" * 30)
 
         # 詳細な天気情報を右側のリストビューに表示
-        weather_details.controls = [ft.Text(info) for info in detailed_info]
+        weather_details.controls = [ft.Container(
+            content=ft.Column([ft.Text(info) for info in detailed_info]),
+            bgcolor=ft.colors.LIGHT_BLUE_50,  # 背景色を設定
+            padding=10  # パディングを追加
+        )]
     else:
         weather_details.controls = [ft.Text("天気情報が取得できませんでした。")]
 
