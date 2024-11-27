@@ -34,54 +34,72 @@ def main(page: ft.Page):
     # 地域名リストを作成
     controls = []
 
-    # centers の中から親地域名を抽出し、その下の子地域を表示
+    # centers の中から親地域名を抽出し、その下の県と地域を表示
     for region_id, region_info in area_json["centers"].items():
         parent_region_name = region_info["name"]
         
         print(f"Processing parent region: {parent_region_name}")  # 親地域のデバッグ
 
-        # 子地域のリストを作成
-        child_controls = []
+        # 県ごとのリストを作成
+        prefecture_controls = []
 
-        # 各子地域に対応する天気予報データを取得
+        # 各県に対応する地域データを取得
         for child_id in region_info["children"]:
             child_region_name = area_json["offices"].get(child_id, {}).get("name", f"Unknown Region {child_id}")
-
-            print(f"  Processing child region: {child_region_name}")  # 子地域のデバッグ
-
-            # 天気予報データを取得
-            weather_data = get_weather_data(child_id)
             
-            # 天気情報を確認
-            if weather_data:
-                weather_info = "情報がありません"
-                # 天気データがある場合、最初の予報を表示
-                forecast = weather_data[0].get('timeSeries', [{}])[0].get('areas', [{}])[0].get('weatherCodes', [])
-                if forecast:
-                    weather_info = forecast[0]  # 予報コードを表示
-            else:
-                weather_info = "情報がありません"
+            # さらに県の下に細分化された地域のリストを作成
+            subregion_controls = []
 
             # 子地域のリストアイテムを作成
-            child_controls.append(
-                ft.ListTile(
-                    title=ft.Text(child_region_name),
-                    subtitle=ft.Text(f"天気予報: {weather_info}"),
-                    on_click=lambda e, region_id=child_id, region_name=child_region_name: show_weather_details(region_id, region_name, weather_details)
-                )
-            )
+            for subregion_id in area_json["offices"].get(child_id, {}).get("children", []):
+                subregion_name = area_json["offices"].get(subregion_id, {}).get("name", f"Unknown Subregion {subregion_id}")
 
-        # 親地域をExpansionTileとして表示
-        controls.append(
-            ft.Container(
-                content=ft.ExpansionTile(
-                    title=ft.Text(parent_region_name),  # 親地域名をタイトルとして表示
-                    subtitle=ft.Text("子地域を表示"),
+                # 天気予報データを取得
+                weather_data = get_weather_data(subregion_id)
+                
+                # 天気情報を確認
+                if weather_data:
+                    weather_info = "情報がありません"
+                    # 天気データがある場合、最初の予報を表示
+                    forecast = weather_data[0].get('timeSeries', [{}])[0].get('areas', [{}])[0].get('weatherCodes', [])
+                    if forecast:
+                        weather_info = forecast[0]  # 予報コードを表示
+                else:
+                    weather_info = "情報がありません"
+
+                # 子地域のリストアイテムを作成
+                subregion_controls.append(
+                    ft.ListTile(
+                        title=ft.Text(subregion_name),
+                        subtitle=ft.Text(f"天気予報: {weather_info}"),
+                        on_click=lambda e, region_id=subregion_id, region_name=subregion_name: show_weather_details(region_id, region_name, weather_details)
+                    )
+                )
+
+            # 県ごとのExpansionTileに子地域を追加
+            prefecture_controls.append(
+                ft.ExpansionTile(
+                    title=ft.Text(child_region_name),  # 県名をタイトルとして表示
+                    subtitle=ft.Text("地域を表示"),
                     affinity=ft.TileAffinity.PLATFORM,
                     maintain_state=True,
                     collapsed_text_color=ft.colors.RED,
                     text_color=ft.colors.RED,
-                    controls=child_controls,  # 子地域のリストを追加
+                    controls=subregion_controls,  # 子地域（細分化された地域）のリストを追加
+                )
+            )
+
+        # 親地域をさらにExpansionTileとして表示し、その中に県ごとのExpansionTileを追加
+        controls.append(
+            ft.Container(
+                content=ft.ExpansionTile(
+                    title=ft.Text(parent_region_name),  # 親地域名をタイトルとして表示
+                    subtitle=ft.Text("県と地域を表示"),
+                    affinity=ft.TileAffinity.PLATFORM,
+                    maintain_state=True,
+                    collapsed_text_color=ft.colors.RED,
+                    text_color=ft.colors.RED,
+                    controls=prefecture_controls,  # 県ごとのリストを追加
                 ),
                 width=200,  # 幅を200pxに設定（短く）
                 alignment=ft.alignment.top_left,  # 左寄せに配置
