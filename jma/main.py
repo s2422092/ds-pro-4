@@ -1,5 +1,9 @@
-import flet as ft
+import sqlite3
 import requests
+import flet as ft
+
+# SQLiteのDBファイル
+db_filename = 'weather_forecast.db'
 
 # APIから地域データを取得
 area_json = requests.get("http://www.jma.go.jp/bosai/common/const/area.json").json()
@@ -15,6 +19,98 @@ def get_weather_data(region_code: str):
         return {}
     
     return response.json()
+
+def save_weather_to_db(region_id, weather_data):
+    """天気データをSQLiteデータベースに保存する"""
+    # DB接続
+    con = sqlite3.connect(db_filename)
+    cur = con.cursor()
+    
+    # テーブル作成（なければ作成）ユニーク制約を追加
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS weather_forecast (
+        region_id TEXT,
+        area_name TEXT,
+        date TEXT,
+        weather TEXT,
+        wind TEXT,
+        wave TEXT,
+        UNIQUE(region_id, area_name, date)  -- 重複防止のためユニーク制約を追加
+    )
+    """)
+    
+    # 時間軸のデータを取り出して保存
+    time_series = weather_data[0].get('timeSeries', [])
+    if time_series:
+        time_defines = time_series[0].get("timeDefines", [])
+        areas = time_series[0].get("areas", [])
+        
+        for area in areas:
+            area_name = area["area"]["name"]
+            weather_codes = area.get("weatherCodes", ["情報なし"])
+            weathers = area.get("weathers", ["情報なし"])
+            winds = area.get("winds", ["情報なし"])
+            waves = area.get("waves", ["情報なし"])
+            
+            for i in range(len(time_defines)):
+                weather = weathers[i] if i < len(weathers) else "情報なし"
+                wind = winds[i] if i < len(winds) else "情報なし"
+                wave = waves[i] if i < len(waves) else "情報なし"
+                date = time_defines[i] if i < len(time_defines) else "情報なし"
+                
+                # 重複がないか確認
+                cur.execute("""
+                SELECT COUNT(*) FROM weather_forecast WHERE region_id = ? AND area_name = ? AND date = ?
+                """, (region_id, area_name, date))
+                if cur.fetchone()[0] == 0:  # まだデータがなければ
+                    # DBに挿入
+                    cur.execute("""
+                    INSERT INTO weather_forecast (region_id, area_name, date, weather, wind, wave)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """, (region_id, area_name, date, weather, wind, wave))
+    
+    # コミットして閉じる
+    con.commit()
+    con.close()
+
+def drop_weather_table():
+    """アプリケーション終了時にテーブルを削除"""
+    con = sqlite3.connect(db_filename)
+    cur = con.cursor()
+    cur.execute("DROP TABLE IF EXISTS weather_forecast")
+    con.commit()
+    con.close()
+
+def search_weather(region_name: str, weather_details):
+    """検索された地域名に基づいて天気予報を表示"""
+    con = sqlite3.connect(db_filename)
+    cur = con.cursor()
+
+    # LIKE演算子を使って部分一致検索を行う
+    cur.execute("""
+    SELECT DISTINCT * FROM weather_forecast WHERE area_name LIKE ?
+    """, ('%' + region_name + '%',))  # 入力された地域名を前後に%を付けて部分一致検索
+    rows = cur.fetchall()
+
+    # 詳細情報を表示
+    detailed_info = []
+    if rows:
+        for row in rows:
+            detailed_info.append(f"地域: {row[1]}")
+            detailed_info.append(f"日時: {row[2]}")
+            detailed_info.append(f"天気: {row[3]}")
+            detailed_info.append(f"風: {row[4]}")
+            detailed_info.append(f"波: {row[5]}")
+            detailed_info.append("-" * 30)
+    else:
+        detailed_info.append("天気情報が見つかりません。")
+
+    weather_details.controls = [ft.Container(
+        content=ft.Column([ft.Text(info) for info in detailed_info]),
+        bgcolor=ft.colors.BLACK,  # 背景色を設定
+        padding=10  # パディングを追加
+    )]
+    weather_details.update()
 
 def main(page: ft.Page):
     # メニューバーを追加
@@ -42,8 +138,6 @@ def main(page: ft.Page):
     for region_id, region_info in area_json["centers"].items():
         parent_region_name = region_info["name"]
         
-        print(f"Processing parent region: {parent_region_name}")  # 親地域のデバッグ
-
         # 県ごとのリストを作成
         prefecture_controls = []
 
@@ -60,8 +154,11 @@ def main(page: ft.Page):
 
             # 天気情報を確認
             if weather_data:
+                # 天気データをDBに保存
+                save_weather_to_db(child_id, weather_data)
+
+                # 保存した天気情報を表示
                 weather_info = "情報がありません"
-                # 天気データがある場合、最初の予報を表示
                 forecast = weather_data[0].get('timeSeries', [{}])[0].get('areas', [{}])[0].get('weatherCodes', [])
                 if forecast:
                     weather_info = forecast[0]  # 予報コードを表示
@@ -83,7 +180,7 @@ def main(page: ft.Page):
                     bgcolor=ft.colors.GREY,  # 背景色を灰色に設定
                     content=ft.ExpansionTile(
                         title=ft.Text(child_region_name),  # 県名をタイトルとして表示
-                        subtitle=ft.Text("地域を表示"),
+                        subtitle=ft.Text("地域を表示", color=ft.colors.WHITE),  # サブタイトルを追加
                         affinity=ft.TileAffinity.PLATFORM,
                         maintain_state=True,
                         collapsed_text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
@@ -99,7 +196,7 @@ def main(page: ft.Page):
                 bgcolor=ft.colors.GREY,  # 背景色を灰色に設定
                 content=ft.ExpansionTile(
                     title=ft.Text(parent_region_name),  # 親地域名をタイトルとして表示
-                    subtitle=ft.Text("県と地域を表示"),
+                    subtitle=ft.Text("県と地域を表示",color=ft.colors.WHITE),
                     affinity=ft.TileAffinity.PLATFORM,
                     maintain_state=True,
                     collapsed_text_color=ft.colors.WHITE,  # フォントカラーを白に変更（展開時）
@@ -129,54 +226,45 @@ def main(page: ft.Page):
         )
     )
 
+    # 検索フォームの追加
+    search_field = ft.TextField(
+        label="地域名で検索",
+        autofocus=True,  # 起動時にフォーカスを当てる
+        on_change=lambda e: search_weather(e.control.value, weather_details)  # 入力内容に応じて検索
+    )
+    page.add(search_field)
+
+    # アプリケーション終了時にテーブルを削除するイベントを追加
+    page.on_page_close = lambda _: drop_weather_table()
+
 def show_weather_details(region_id, region_name, weather_details):
     """クリックされた子地域の天気予報を右側に表示"""
-    # 天気予報データを取得
-    weather_data = get_weather_data(region_id)
+    # SQLiteから天気予報データを取得
+    con = sqlite3.connect('weather_forecast.db')
+    cur = con.cursor()
+    cur.execute("""
+    SELECT DISTINCT * FROM weather_forecast WHERE region_id = ? LIMIT 10
+    """, (region_id,))
+    rows = cur.fetchall()
 
-    # 天気情報を確認
-    if weather_data:
-        # ここに表示する情報を整理
-        time_series = weather_data[0].get('timeSeries', [])
-        
-        # 1番目のtimeSeriesを取り出し、詳細を整理
-        time_defines = time_series[0].get("timeDefines", [])
-        areas = time_series[0].get("areas", [])
-        
-        detailed_info = []
-        for area in areas:
-            area_name = area["area"]["name"]
-            
-            # 各リスト（weatherCodes, weathers, winds, waves）からデータを取得
-            weather_codes = area.get("weatherCodes", ["情報なし"])
-            weathers = area.get("weathers", ["情報なし"])
-            winds = area.get("winds", ["情報なし"])
-            waves = area.get("waves", ["情報なし"])
-
-            # 3日分のデータを整理
-            for i in range(len(time_defines)):
-                # 各リストからデータを取得
-                weather = weathers[i] if i < len(weathers) else "情報なし"
-                wind = winds[i] if i < len(winds) else "情報なし"
-                wave = waves[i] if i < len(waves) else "情報なし"
-                time_define = time_defines[i] if i < len(time_defines) else "情報なし"
-                
-                detailed_info.append(f"日時: {time_define}")
-                detailed_info.append(f"地域: {area_name}")
-                detailed_info.append(f"天気: {weather}")
-                detailed_info.append(f"風: {wind}")
-                detailed_info.append(f"波: {wave}")
-                detailed_info.append("-" * 30)
-
-        # 詳細な天気情報を右側のリストビューに表示
-        weather_details.controls = [ft.Container(
-            content=ft.Column([ft.Text(info) for info in detailed_info]),
-            bgcolor=ft.colors.LIGHT_BLUE_50,  # 背景色を設定
-            padding=10  # パディングを追加
-        )]
+    # 詳細情報を表示
+    detailed_info = []
+    if rows:
+        for row in rows:
+            detailed_info.append(f"地域: {row[1]}")
+            detailed_info.append(f"日時: {row[2]}")
+            detailed_info.append(f"天気: {row[3]}")
+            detailed_info.append(f"風: {row[4]}")
+            detailed_info.append(f"波: {row[5]}")
+            detailed_info.append("-" * 30)
     else:
-        weather_details.controls = [ft.Text("天気情報が取得できませんでした。")]
+        detailed_info.append("天気情報が見つかりません。")
 
+    weather_details.controls = [ft.Container(
+        content=ft.Column([ft.Text(info, color=ft.colors.WHITE) for info in detailed_info]),
+        bgcolor=ft.colors.BLACK,  # 背景色を設定
+        padding=10  # パディングを追加
+    )]
     weather_details.update()
 
 # Fletアプリケーションを実行
